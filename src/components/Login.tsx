@@ -34,9 +34,9 @@ function Login({ onLogin }: LoginProps) {
   };
 
   return (
-    <div className="container flex justify-center items-center min-h-screen">
-      <div className="card w-full max-w-md">
-        <h1 className="card-header text-center">Iniciar Sesión</h1>
+    <div className="container">
+      <div className="card">
+        <h1 className="card-header">Iniciar Sesión</h1>
         <form onSubmit={handleSubmit} className="card-body">
           <label className="label">Correo Electrónico</label>
           <input
@@ -44,7 +44,6 @@ function Login({ onLogin }: LoginProps) {
             value={email}
             onChange={(e) => setEmail(e.target.value)}
             required
-            className="input"
           />
           <label className="label">Contraseña</label>
           <input
@@ -52,18 +51,15 @@ function Login({ onLogin }: LoginProps) {
             value={password}
             onChange={(e) => setPassword(e.target.value)}
             required
-            className="input"
           />
-          <button type="submit" className="btn mt-4 w-full">
-            Iniciar Sesión
-          </button>
-          <p className="text-center mt-4">
-            ¿No tienes una cuenta?{' '}
-            <Link to="/register" className="text-blue-600 hover:underline">
-              Regístrate aquí
-            </Link>
-          </p>
+          <button type="submit" className="mt-4">Iniciar Sesión</button>
         </form>
+        <p className="mt-4">
+          ¿No tienes una cuenta?{' '}
+          <Link to="/register" className="text-blue-600 hover:underline">
+            Regístrate aquí
+          </Link>
+        </p>
       </div>
     </div>
   );

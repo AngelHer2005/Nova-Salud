@@ -3,13 +3,13 @@ import { useState, useEffect } from 'react';
 function CustomerService() {
   interface Case {
     id: number;
-    customer_id: string;
+    email: string;
     issue_description: string;
     resolution_status: string;
   }
 
   const [cases, setCases] = useState<Case[]>([]);
-  const [newCase, setNewCase] = useState({ customer_id: '', issue_description: '' });
+  const [newCase, setNewCase] = useState({ email: '', issue_description: '' });
   const [editingCase, setEditingCase] = useState<Case | null>(null);
 
   useEffect(() => {
@@ -28,12 +28,12 @@ function CustomerService() {
   }, []);
 
   const handleAddCase = () => {
-    if (!newCase.customer_id || !newCase.issue_description) {
+    if (!newCase.email || !newCase.issue_description) {
       alert('Por favor, complete todos los campos.');
       return;
     }
 
-    fetch('/api/customer-service', {
+    fetch('/api/customer-service/email', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify(newCase),
@@ -41,19 +41,27 @@ function CustomerService() {
       .then((res) => {
         if (!res.ok) {
           return res.json().then((error) => {
-            throw new Error(error.message || 'Error al registrar el caso');
+            throw new Error(error.message || 'Error al enviar el caso');
           });
         }
         return res.json();
       })
-      .then((caseData) => {
-        setCases([...cases, caseData]);
-        setNewCase({ customer_id: '', issue_description: '' }); // Reiniciar el formulario
-        alert('Caso registrado exitosamente.');
+      .then((createdCase) => {
+        setCases((prevCases) => [
+          ...prevCases,
+          {
+            id: createdCase.id,
+            email: newCase.email,
+            issue_description: newCase.issue_description,
+            resolution_status: 'Pendiente',
+          },
+        ]);
+        setNewCase({ email: '', issue_description: '' }); // Reiniciar el formulario
+        alert('Mensaje enviado exitosamente. Espere la respuesta del equipo.');
       })
       .catch((error) => {
-        console.error('Error al registrar caso:', error.message);
-        alert(`No se pudo registrar el caso: ${error.message}`);
+        console.error('Error al enviar el caso:', error.message);
+        alert(`No se pudo enviar el caso: ${error.message}`);
       });
   };
 
@@ -67,14 +75,18 @@ function CustomerService() {
     })
       .then((res) => {
         if (!res.ok) {
-          throw new Error('Error al editar el caso');
+          return res.json().then((error) => {
+            throw new Error(error.message || 'Error al editar el caso');
+          });
         }
         return res.json();
       })
       .then((updatedCase) => {
-        setCases(
-          cases.map((caseItem) =>
-            caseItem.id === updatedCase.id ? updatedCase : caseItem
+        setCases((prevCases) =>
+          prevCases.map((caseItem) =>
+            caseItem.id === updatedCase.id
+              ? { ...caseItem, ...updatedCase }
+              : caseItem
           )
         );
         setEditingCase(null);
@@ -82,7 +94,7 @@ function CustomerService() {
       })
       .catch((error) => {
         console.error('Error al editar caso:', error.message);
-        alert('No se pudo editar el caso. Revisa la consola para más detalles.');
+        alert(`No se pudo editar el caso: ${error.message}`);
       });
   };
 
@@ -92,26 +104,26 @@ function CustomerService() {
         <h1 className="card-header">Atención al Cliente</h1>
         <div className="card-body">
           <h2 className="text-xl font-bold mb-4">
-            {editingCase ? 'Editar Caso' : 'Registrar Caso'}
+            {editingCase ? 'Editar Caso' : 'Enviar Caso'}
           </h2>
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
             <div>
-              <label className="label">ID del Cliente</label>
+              <label className="label">Correo Electrónico</label>
               <input
-                type="text"
-                placeholder="Ingrese el ID del Cliente"
-                value={editingCase ? editingCase.customer_id : newCase.customer_id}
+                type="email"
+                placeholder="Ingrese su correo electrónico"
+                value={editingCase ? editingCase.email : newCase.email}
                 onChange={(e) =>
                   editingCase
-                    ? setEditingCase({ ...editingCase, customer_id: e.target.value })
-                    : setNewCase({ ...newCase, customer_id: e.target.value })
+                    ? setEditingCase({ ...editingCase, email: e.target.value })
+                    : setNewCase({ ...newCase, email: e.target.value })
                 }
               />
             </div>
             <div className="md:col-span-2">
               <label className="label">Descripción del Problema</label>
               <textarea
-                placeholder="Describa el problema del cliente"
+                placeholder="Describa el problema"
                 value={
                   editingCase
                     ? editingCase.issue_description
@@ -129,7 +141,7 @@ function CustomerService() {
             onClick={editingCase ? handleEditCase : handleAddCase}
             className="mt-4"
           >
-            {editingCase ? 'Guardar Cambios' : 'Registrar Caso'}
+            {editingCase ? 'Guardar Cambios' : 'Enviar Caso'}
           </button>
         </div>
       </div>
@@ -142,7 +154,7 @@ function CustomerService() {
             <thead>
               <tr>
                 <th>ID</th>
-                <th>ID Cliente</th>
+                <th>Correo Electrónico</th>
                 <th>Descripción</th>
                 <th>Estado</th>
                 <th>Acciones</th>
@@ -152,7 +164,7 @@ function CustomerService() {
               {cases.map((caseItem) => (
                 <tr key={caseItem.id}>
                   <td>{caseItem.id}</td>
-                  <td>{caseItem.customer_id}</td>
+                  <td>{caseItem.email}</td>
                   <td>{caseItem.issue_description}</td>
                   <td>
                     <span

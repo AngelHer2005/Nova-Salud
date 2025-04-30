@@ -1,6 +1,10 @@
 import { useState, useEffect } from 'react';
 
-function Inventory() {
+interface InventoryProps {
+  onStockChange: () => void;
+}
+
+function Inventory({ onStockChange }: InventoryProps) {
   interface Product {
     id: number;
     name: string;
@@ -9,7 +13,7 @@ function Inventory() {
   }
 
   const [products, setProducts] = useState<Product[]>([]);
-  const [newProduct, setNewProduct] = useState({ name: '', stock: 0, price: 0 });
+  const [newProduct, setNewProduct] = useState({ name: '', stock: '', price: '' });
   const [editingProduct, setEditingProduct] = useState<Product | null>(null);
 
   useEffect(() => {
@@ -28,7 +32,7 @@ function Inventory() {
   }, []);
 
   const handleAddProduct = () => {
-    if (!newProduct.name || newProduct.stock <= 0 || newProduct.price <= 0) {
+    if (!newProduct.name || !newProduct.stock || !newProduct.price || +newProduct.stock <= 0 || +newProduct.price <= 0) {
       alert('Por favor, complete todos los campos con valores válidos.');
       return;
     }
@@ -36,7 +40,7 @@ function Inventory() {
     fetch('/api/products', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify(newProduct),
+      body: JSON.stringify({ ...newProduct, stock: +newProduct.stock, price: +newProduct.price }),
     })
       .then((res) => {
         if (!res.ok) {
@@ -48,8 +52,9 @@ function Inventory() {
       })
       .then((product) => {
         setProducts([...products, product]);
-        setNewProduct({ name: '', stock: 0, price: 0 }); // Reiniciar el formulario
+        setNewProduct({ name: '', stock: '', price: '' }); // Reiniciar el formulario
         alert('Producto agregado exitosamente.');
+        onStockChange(); // Notificar cambios en el stock
       })
       .catch((error) => {
         console.error('Error:', error.message);
@@ -63,7 +68,11 @@ function Inventory() {
     fetch(`/api/products/${editingProduct.id}`, {
       method: 'PUT',
       headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify(editingProduct),
+      body: JSON.stringify({
+        ...editingProduct,
+        stock: +editingProduct.stock,
+        price: parseFloat(editingProduct.price.toString()),
+      }),
     })
       .then((res) => {
         if (!res.ok) {
@@ -72,13 +81,16 @@ function Inventory() {
         return res.json();
       })
       .then((updatedProduct) => {
-        setProducts(
-          products.map((product) =>
-            product.id === updatedProduct.id ? updatedProduct : product
+        setProducts((prevProducts) =>
+          prevProducts.map((product) =>
+            product.id === updatedProduct.id
+              ? { ...product, ...updatedProduct }
+              : product
           )
         );
         setEditingProduct(null);
         alert('Producto editado exitosamente.');
+        onStockChange(); // Notificar cambios en el stock
       })
       .catch((error) => {
         console.error('Error al editar producto:', error.message);
@@ -99,6 +111,7 @@ function Inventory() {
       .then(() => {
         setProducts(products.filter((product) => product.id !== id));
         alert('Producto eliminado exitosamente.');
+        onStockChange(); // Notificar cambios en el stock
       })
       .catch((error) => {
         console.error('Error al eliminar producto:', error.message);
@@ -128,7 +141,7 @@ function Inventory() {
                 type="number"
                 placeholder="Ingrese la cantidad en stock"
                 value={newProduct.stock}
-                onChange={(e) => setNewProduct({ ...newProduct, stock: +e.target.value })}
+                onChange={(e) => setNewProduct({ ...newProduct, stock: e.target.value })}
               />
             </div>
             <div>
@@ -137,7 +150,7 @@ function Inventory() {
                 type="number"
                 placeholder="Ingrese el precio unitario"
                 value={newProduct.price}
-                onChange={(e) => setNewProduct({ ...newProduct, price: +e.target.value })}
+                onChange={(e) => setNewProduct({ ...newProduct, price: e.target.value })}
               />
             </div>
           </div>

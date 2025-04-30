@@ -1,5 +1,5 @@
-import { BrowserRouter as Router, Routes, Route, Navigate } from 'react-router-dom';
-import { useState } from 'react';
+import { BrowserRouter as Router, Routes, Route, Navigate, Link } from 'react-router-dom';
+import { useState, useEffect } from 'react';
 import Inventory from './components/Inventory';
 import Sales from './components/Sales';
 import Alerts from './components/Alerts';
@@ -8,10 +8,44 @@ import Login from './components/Login';
 import Register from './components/Register';
 
 function App() {
-  const [isAuthenticated, setIsAuthenticated] = useState<boolean>(false);
+  const [isAuthenticated, setIsAuthenticated] = useState<boolean>(
+    () => localStorage.getItem('isAuthenticated') === 'true'
+  );
+  const [lowStockCount, setLowStockCount] = useState<number>(0);
 
-  const handleLogin = () => setIsAuthenticated(true);
-  const handleLogout = () => setIsAuthenticated(false);
+  const fetchLowStock = () => {
+    fetch('/api/low-stock')
+      .then((res) => {
+        if (!res.ok) {
+          throw new Error('Error al obtener productos con bajo stock');
+        }
+        return res.json();
+      })
+      .then((data) => setLowStockCount(data.length))
+      .catch((error) => {
+        console.error('Error al cargar productos con bajo stock:', error.message);
+      });
+  };
+
+  useEffect(() => {
+    fetchLowStock();
+  }, []); // Ejecutar solo una vez al montar el componente
+
+  const handleLogin = () => {
+    setIsAuthenticated(true);
+    localStorage.setItem('isAuthenticated', 'true');
+  };
+
+  const handleLogout = () => {
+    setIsAuthenticated(false);
+    localStorage.removeItem('isAuthenticated');
+  };
+
+  useEffect(() => {
+    // Sincronizar el estado con localStorage
+    const authStatus = localStorage.getItem('isAuthenticated') === 'true';
+    setIsAuthenticated(authStatus);
+  }, []);
 
   return (
     <Router>
@@ -28,11 +62,23 @@ function App() {
               isAuthenticated ? (
                 <div>
                   <nav>
+                    <Link to="/" className="nav-link">Inventario</Link>
+                    <Link to="/sales" className="nav-link">Ventas</Link>
+                    <Link to="/alerts" className="nav-link relative">
+                      Alertas
+                      <span
+                        className="notification-circle"
+                        style={{ display: lowStockCount > 0 ? 'flex' : 'none' }}
+                      >
+                        {lowStockCount}
+                      </span>
+                    </Link>
+                    <Link to="/customer-service" className="nav-link">Atención al Cliente</Link>
                     <button onClick={handleLogout} className="nav-link">Cerrar Sesión</button>
                   </nav>
                   <Routes>
-                    <Route path="/" element={<Inventory />} />
-                    <Route path="/sales" element={<Sales />} />
+                    <Route path="/" element={<Inventory onStockChange={fetchLowStock} />} />
+                    <Route path="/sales" element={<Sales onStockChange={fetchLowStock} />} />
                     <Route path="/alerts" element={<Alerts />} />
                     <Route path="/customer-service" element={<CustomerService />} />
                   </Routes>

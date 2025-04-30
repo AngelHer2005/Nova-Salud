@@ -30,9 +30,9 @@ function Register() {
   };
 
   return (
-    <div className="container flex justify-center items-center min-h-screen">
-      <div className="card w-full max-w-md">
-        <h1 className="card-header text-center">Registrarse</h1>
+    <div className="container">
+      <div className="card">
+        <h1 className="card-header">Registrarse</h1>
         <form onSubmit={handleSubmit} className="card-body">
           <label className="label">Correo Electrónico</label>
           <input
@@ -40,7 +40,6 @@ function Register() {
             value={email}
             onChange={(e) => setEmail(e.target.value)}
             required
-            className="input"
           />
           <label className="label">Contraseña</label>
           <input
@@ -48,18 +47,15 @@ function Register() {
             value={password}
             onChange={(e) => setPassword(e.target.value)}
             required
-            className="input"
           />
-          <button type="submit" className="btn mt-4 w-full">
-            Registrarse
-          </button>
-          <p className="text-center mt-4">
-            ¿Ya tienes una cuenta?{' '}
-            <Link to="/login" className="text-blue-600 hover:underline">
-              Inicia sesión aquí
-            </Link>
-          </p>
+          <button type="submit" className="mt-4">Registrarse</button>
         </form>
+        <p className="mt-4">
+          ¿Ya tienes una cuenta?{' '}
+          <Link to="/login" className="text-blue-600 hover:underline">
+            Inicia sesión aquí
+          </Link>
+        </p>
       </div>
     </div>
   );
